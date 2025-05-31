@@ -9,5 +9,5 @@
     "deploy-only": "aws s3 sync ./public s3://wealth.wittrock.us --acl public-read",
     "deploy": "yarn deploy-only && yarn refresh",
     "refresh": "aws cloudfront create-invalidation --distribution-id E2G63FESCAVZN4 --paths \"/*\""
-  },
+  }
 }

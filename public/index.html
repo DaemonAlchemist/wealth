@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wealth Classification Tool</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f7fa;
+      color: #333;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #222;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      padding: 30px 40px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border 0.2s ease;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #2e86de;
+    }
+
+    #result, #class-level {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #2e86de !important;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Wealth Classification Tool</h2>
+
+  <div class="container">
+    <label>Income Level:
+      <select id="income">
+        <option value="Extremely Low">Extremely Low: &lt;$15,000</option>
+        <option value="Very Low">Very Low: $15,000–$30,000</option>
+        <option value="Low">Low: $30,000–$60,000</option>
+        <option value="Moderate">Moderate: $60,000–$120,000</option>
+        <option value="High">High: $120,000–$250,000</option>
+        <option value="Very High">Very High: $250,000–$500,000</option>
+        <option value="Ultra High">Ultra High: &gt;$500,000</option>
+      </select>
+    </label>
+
+    <label>Expense Level:
+      <select id="expenses">
+        <option value="Extremely Low">Extremely Low: &lt;$15,000</option>
+        <option value="Very Low">Very Low: $15,000–$30,000</option>
+        <option value="Low">Low: $30,000–$60,000</option>
+        <option value="Moderate">Moderate: $60,000–$120,000</option>
+        <option value="High">High: $120,000–$200,000</option>
+        <option value="Very High">Very High: $200,000–$350,000</option>
+        <option value="Ultra High">Ultra High: &gt;$350,000</option>
+      </select>
+    </label>
+
+    <label>Liquid Assets:
+      <select id="liquid">
+        <option value="None">None: $0</option>
+        <option value="Tiny">Tiny: $1–$1,000</option>
+        <option value="Very Low">Very Low: $1,000–$5,000</option>
+        <option value="Low">Low: $5,000–$25,000</option>
+        <option value="Moderate">Moderate: $25,000–$100,000</option>
+        <option value="High">High: $100,000–$500,000</option>
+        <option value="Very High">Very High: $500,000–$1,000,000</option>
+        <option value="Ultra High">Ultra High: &gt;$1,000,000</option>
+      </select>
+    </label>
+
+    <label>Hard Assets:
+      <select id="hard">
+        <option value="None">None: $0</option>
+        <option value="Tiny">Tiny: $1–$5,000</option>
+        <option value="Very Low">Very Low: $5,000–$25,000</option>
+        <option value="Low">Low: $25,000–$100,000</option>
+        <option value="Moderate">Moderate: $100,000–$500,000</option>
+        <option value="High">High: $500,000–$2,000,000</option>
+        <option value="Very High">Very High: $2,000,000–$10,000,000</option>
+        <option value="Ultra High">Ultra High: &gt;$10,000,000</option>
+      </select>
+    </label>
+
+    <div id="class-level" style="margin-top: 10px; font-weight: bold; color: #555;"></div>
+    <div id="class-description" style="margin-top: 10px; line-height: 1.5;"></div>
+    <div id="resources-classes" style="margin-top: 20px;"></div>
+
+    <div id="result">Classification: —</div>
+    <div id="details" style="margin-top: 20px; line-height: 1.5;"></div>
+    <div id="resources-feelings" style="margin-top: 20px;"></div>
+  </div>
+
+  <script>
+    const incomeRanks = ['Extremely Low', 'Very Low', 'Low', 'Moderate', 'High', 'Very High', 'Ultra High'];
+    const assetRanks = ['None', 'Tiny', 'Very Low', 'Low', 'Moderate', 'High', 'Very High', 'Ultra High'];
+    const descriptionMap = {
+        "Surviving": {
+            desc: `You're in a highly precarious financial position. Income is insufficient to comfortably meet basic needs, and you have little to no financial buffer. A single unexpected expense could cause a serious crisis.`,
+            steps: `• Focus on increasing income through job changes, skill-building, or side hustles.<br>
+                    • Use assistance programs to ease pressure.<br>
+                    • Start a $500–$1,000 emergency fund.<br>
+                    • Eliminate non-essential expenses.`
+        },
+        "Struggling": {
+            desc: `You can cover basics but have limited savings and remain vulnerable. Money is tight, and unexpected costs are disruptive.`,
+            steps: `• Track spending and cut unnecessary costs.<br>
+                    • Begin small, automated savings.<br>
+                    • Improve skills to boost earning potential.<br>
+                    • Address debt early.`
+        },
+        "Treading Water": {
+            desc: `You're breaking even. Expenses match income and savings are minimal. You’re not declining, but not progressing either.`,
+            steps: `• Optimize spending to build a savings gap.<br>
+                    • Prioritize a 3-month emergency fund.<br>
+                    • Begin long-term investments.<br>
+                    • Guard against lifestyle inflation.`
+        },
+        "Stable": {
+            desc: `You’re financially safe but not yet wealthy. Income reliably exceeds expenses and you’ve built a small safety net.`,
+            steps: `• Build a 3–6 month emergency fund.<br>
+                    • Increase retirement contributions.<br>
+                    • Begin investing with clear goals.<br>
+                    • Maintain smart expense habits.`
+        },
+        "Comfortable": {
+            desc: `You’re in a good place. Income, savings, and assets are solid. You can weather setbacks and plan confidently.`,
+            steps: `• Maximize tax efficiency.<br>
+                    • Diversify investments and protect gains.<br>
+                    • Plan for mid/long-term goals (home, retirement, legacy).`
+        },
+        "Building Up": {
+            desc: `You’re gaining traction. Surplus income is flowing into savings or investments. The trajectory is positive.`,
+            steps: `• Reinvest cashflows for growth.<br>
+                    • Define specific milestones (e.g. net worth goals).<br>
+                    • Avoid lifestyle inflation.<br>
+                    • Monitor progress monthly.`
+        },
+        "Overstretched": {
+            desc: `You earn and own a lot, but also spend a lot. Cashflow may feel tight due to debt or high fixed costs.`,
+            steps: `• Reduce discretionary expenses.<br>
+                    • Rebuild liquidity.<br>
+                    • Consider downsizing or restructuring debt.<br>
+                    • Rebalance priorities toward long-term security.`
+        },
+        "Financially Free": {
+            desc: `You’re independent—your assets or passive income can support your lifestyle indefinitely.`,
+            steps: `• Maintain asset allocation and rebalance yearly.<br>
+                    • Optimize estate and tax strategies.<br>
+                    • Focus on purpose: family, giving, or leisure.<br>
+                    • Consider educating/mentoring others.`
+        },
+        "Asset-Rich, Cash-Poor": {
+            desc: `You have significant assets tied up in property or retirement, but lack day-to-day liquidity.`,
+            steps: `• Explore liquidity access (HELOC, sale, drawdown).<br>
+                    • Shift some wealth into liquid forms.<br>
+                    • Align asset structure with life needs.`
+        },
+        "High Net Worth": {
+            desc: `You’re firmly in the top tier. Wealth is broad and diversified. Your focus is now on stewardship and efficiency.`,
+            steps: `• Optimize taxes and legacy plans.<br>
+                    • Reevaluate risk exposure and long-term goals.<br>
+                    • Teach financial literacy within your family.`
+        },
+        "Affluent": {
+            desc: `You’re above comfort, likely with business ownership or high-value assets. You’re near the top percentile.`,
+            steps: `• Focus on preserving wealth.<br>
+                    • Seek tax and investment specialization.<br>
+                    • Diversify income and asset classes.`
+        },
+        "Wealthy Elite": {
+            desc: `You’re among the ultra-wealthy. Your focus is likely legacy, philanthropy, or structural wealth planning.`,
+            steps: `• Establish or expand family office structures.<br>
+                    • Engage in advanced estate or philanthropic planning.<br>
+                    • Delegate operations to maintain simplicity and control.`
+        }
+    };
+
+    const classDescriptions = {
+        "Lower Class": {
+            desc: `Struggles with very low income and often zero savings or assets. May rely on public assistance, informal work, or community support.`,
+            steps: `• <strong>Income:</strong> Pursue job training, certifications, or local job assistance programs.<br>
+                    • <strong>Expenses:</strong> Seek housing, food, and utility subsidies to stabilize.<br>
+                    • <strong>Liquid Assets:</strong> Open a no-fee savings account and begin saving even $5/week.<br>
+                    • <strong>Hard Assets:</strong> Avoid predatory financing. Focus first on cash stability.`
+        },
+        "Lower-Middle Class": {
+            desc: `Modest income allows survival and some minor savings. Assets are still minimal. Financial pressure is ongoing.`,
+            steps: `• <strong>Income:</strong> Look for higher-paying roles or expand hours.<br>
+                    • <strong>Expenses:</strong> Audit for subscriptions or lifestyle expenses that can be reduced.<br>
+                    • <strong>Liquid Assets:</strong> Build a starter emergency fund ($500–$1,500).<br>
+                    • <strong>Hard Assets:</strong> Explore employer retirement plans (even 1% to start).`
+        },
+        "Middle Class": {
+            desc: `Can afford moderate discretionary spending and is growing assets. Liquidity may still be tight.`,
+            steps: `• <strong>Income:</strong> Negotiate raises or add a side hustle.<br>
+                    • <strong>Expenses:</strong> Use a budget to grow your monthly surplus.<br>
+                    • <strong>Liquid Assets:</strong> Target 3 months of expenses in savings.<br>
+                    • <strong>Hard Assets:</strong> Prioritize long-term vehicles like IRAs or home equity.`
+        },
+        "Upper-Middle Class": {
+            desc: `Strong earning power and growing financial stability. Liquidity and asset diversification are key.`,
+            steps: `• <strong>Income:</strong> Maximize 401(k) matches and bonuses.<br>
+                    • <strong>Expenses:</strong> Channel surpluses into investment, not lifestyle inflation.<br>
+                    • <strong>Liquid Assets:</strong> Maintain a 6-month emergency buffer.<br>
+                    • <strong>Hard Assets:</strong> Consider real estate or private investment vehicles.`
+        },
+        "Affluent": {
+            desc: `High earnings with strong financial habits. Investing and tax optimization become primary levers.`,
+            steps: `• <strong>Income:</strong> Convert active income into passive income streams.<br>
+                    • <strong>Expenses:</strong> Monitor for inefficiencies or redundant luxuries.<br>
+                    • <strong>Liquid Assets:</strong> Consider high-yield savings and laddered CDs.<br>
+                    • <strong>Hard Assets:</strong> Diversify beyond primary residence (e.g., REITs, rental property).`
+        },
+        "High Net Worth Individual": {
+            desc: `Assets exceed $1M+. Planning shifts from accumulation to optimization and protection.`,
+            steps: `• <strong>Income:</strong> Evaluate income stream sustainability (e.g., business exit, dividends).<br>
+                    • <strong>Expenses:</strong> Consider tax implications of major expenses or gifts.<br>
+                    • <strong>Liquid Assets:</strong> Balance returns with liquidity for agility.<br>
+                    • <strong>Hard Assets:</strong> Rebalance between business equity, property, and portfolios.`
+        },
+        "Wealth Elite": {
+            desc: `Extreme financial abundance. Primary focus is legacy, stewardship, and intergenerational planning.`,
+            steps: `• <strong>Income:</strong> Institutionalize passive or recurring income (e.g., funds, royalties).<br>
+                    • <strong>Expenses:</strong> Audit for trust/estate strategy compatibility.<br>
+                    • <strong>Liquid Assets:</strong> Maintain reserves for opportunity and risk.<br>
+                    • <strong>Hard Assets:</strong> Use family offices, foundations, or private banking structures.`
+        },
+        "Upper Class": {
+            desc: `Solidified wealth and strong cashflow. Enjoys comfort and influence, often across generations.`,
+            steps: `• <strong>Income:</strong> Leverage for investment or philanthropy.<br>
+                    • <strong>Expenses:</strong> Align spending with legacy and long-term strategy.<br>
+                    • <strong>Liquid Assets:</strong> Review allocation toward tax-advantaged vehicles.<br>
+                    • <strong>Hard Assets:</strong> Optimize ownership (e.g., LLCs, trusts).`
+        }
+    };
+
+    const resources = {
+        "feelings": {
+            "Surviving": [
+            {
+                "title": "The Total Money Makeover",
+                "author": "Dave Ramsey",
+                "url": "https://amzn.to/3StRIB9"
+            },
+            {
+                "title": "Clever Fox Budget Planner",
+                "author": "",
+                "url": "https://amzn.to/4dCE8oG"
+            }
+            ],
+            "Struggling": [
+            {
+                "title": "Your Money or Your Life",
+                "author": "Vicki Robin",
+                "url": "https://amzn.to/4kj0U7E"
+            },
+            {
+                "title": "Clever Fox Budget Planner Premium Edition",
+                "author": "",
+                "url": "https://amzn.to/3FhbjBP"
+            }
+            ],
+            "Treading Water": [
+            {
+                "title": "I Will Teach You to Be Rich",
+                "author": "Ramit Sethi",
+                "url": "https://amzn.to/3StRzO7"
+            },
+            {
+                "title": "The In-Case-of-Emergency Workbook",
+                "author": "Vicki Hinze",
+                "url": "https://amzn.to/3ZI7Pim"
+            }
+            ],
+            "Stable": [
+            {
+                "title": "The Psychology of Money",
+                "author": "Morgan Housel",
+                "url": "https://amzn.to/4jurpWu"
+            },
+            {
+                "title": "Net Worth Tracker",
+                "author": "Financial Life Press",
+                "url": "https://amzn.to/4kkgsIr"
+            }
+            ],
+            "Comfortable": [
+            {
+                "title": "Money: Master the Game",
+                "author": "Tony Robbins",
+                "url": "https://amzn.to/4ki0vSS"
+            },
+            {
+                "title": "Investments: Analysis and Management",
+                "author": "Gerald R. Jensen and Charles P. Jones",
+                "url": "https://amzn.to/43ns6fJ"
+            }
+            ],
+            "Building Up": [
+            {
+                "title": "Set for Life",
+                "author": "Scott Trench",
+                "url": "https://amzn.to/4jvDta2"
+            },
+            {
+                "title": "The Wealthy Gardener",
+                "author": "John Soforic",
+                "url": "https://amzn.to/45kQKPx"
+            }
+            ],
+            "Overstretched": [
+            {
+                "title": "Quit Like a Millionaire",
+                "author": "Kristy Shen",
+                "url": "https://amzn.to/43NboW6"
+            },
+            {
+                "title": "The One Page Financial Plan",
+                "author": "Carl Richards",
+                "url": "https://amzn.to/3Hx3t7w"
+            }
+            ],
+            "Financially Free": [
+            {
+                "title": "Die With Zero",
+                "author": "Bill Perkins",
+                "url": "https://amzn.to/3Z99rSl"
+            },
+            {
+                "title": "Financial Freedom",
+                "author": "Grant Sabatier",
+                "url": "https://amzn.to/3SZ0jfh"
+            }
+            ],
+            "Asset-Rich, Cash-Poor": [
+            {
+                "title": "Retire Before Mom and Dad",
+                "author": "Rob Berger",
+                "url": "https://amzn.to/3HhSOOa"
+            },
+            {
+                "title": "Unlocking Millions: The Ultimate Guide to Using and Investing with the HELOC",
+                "author": "Tyler Wehrung",
+                "url": "https://amzn.to/3Z880DF"
+            }
+            ]
+        },
+        "classes": {
+            "Lower Class": [
+            {
+                "title": "$2.00 a Day: Living on Almost Nothing in America",
+                "author": "Edin & Shaefer",
+                "url": "https://amzn.to/4kBgX0u"
+            }
+            ],
+            "Lower-Middle Class": [
+            {
+                "title": "The Simple Path to Wealth",
+                "author": "JL Collins",
+                "url": "https://amzn.to/3ZGiZ7i"
+            }
+            ],
+            "Middle Class": [
+            {
+                "title": "The Millionaire Next Door",
+                "author": "Thomas Stanley",
+                "url": "https://amzn.to/4mFRrce"
+            }
+            ],
+            "Upper-Middle Class": [
+            {
+                "title": "Tax-Free Wealth",
+                "author": "Tom Wheelwright",
+                "url": "https://amzn.to/4kLMEo0"
+            }
+            ],
+            "Affluent": [
+            {
+                "title": "The Bogleheads’ Guide to Investing",
+                "author": "Larimore, Lindauer, LeBoeuf",
+                "url": "https://amzn.to/4kBgSKe"
+            }
+            ],
+            "High Net Worth Individual": [
+            {
+                "title": "Family Wealth: Keeping It in the Family",
+                "author": "James E. Hughes Jr.",
+                "url": "https://amzn.to/43EX6q6"
+            }
+            ],
+            "Wealth Elite": [
+            {
+                "title": "Wealth: Grow It, Protect It, Spend It, and Share It",
+                "author": "Stuart Lucas",
+                "url": "https://amzn.to/3T0dtJ3"
+            }
+            ],
+            "Upper Class": [
+            {
+                "title": "Rich Dad's Guide to Investing",
+                "author": "Robert Kiyosaki",
+                "url": "https://amzn.to/43qjXHq"
+            }
+            ]
+        }
+    }
+
+    const elements = ["income", "expenses", "liquid", "hard"];
+    elements.forEach(id => document.getElementById(id).addEventListener("change", classify));
+    function determineClassLevel(incomeI, liquidI, hardI) {
+        const wealthIndex = (liquidI + hardI) / 2;
+
+        if (incomeI <= 1 && wealthIndex <= 1) return "Lower Class";
+        if (incomeI <= 2 && wealthIndex <= 2) return "Lower-Middle Class";
+        if (incomeI <= 3 && wealthIndex <= 3) return "Middle Class";
+        if (incomeI <= 4 && wealthIndex <= 4) return "Upper-Middle Class";
+        if (incomeI <= 5 && wealthIndex <= 5) return "Affluent";
+        if (incomeI === 6 && wealthIndex >= 6) return "High Net Worth Individual";
+        if (incomeI === 6 && wealthIndex === 7) return "Wealth Elite";
+
+        return "Upper Class";
+    }
+
+    function renderResources(feeling, classLevel) {
+        const containerFeelings = document.getElementById('resources-feelings');
+        const containerClasses = document.getElementById('resources-classes');
+        const feelingLinks = resources.feelings[feeling] || [];
+        const classLinks = resources.classes[classLevel] || [];
+
+        let htmlFeelings = "";
+        function renderLink({ title, author, url }) {
+            const safeAuthor = author && author.trim() !== "" ? ` by ${author}` : "";
+            return `<li><a href="${url}?tag=yourtag-20" target="_blank">${title}</a>${safeAuthor}</li>`;
+        }
+        
+        if (feelingLinks.length > 0) {
+            htmlFeelings += `<h3>Resources</h3><ul>`;
+            feelingLinks.forEach(link => {
+            htmlFeelings += renderLink(link);
+            });
+            htmlFeelings += "</ul>";
+        }
+        containerFeelings.innerHTML = htmlFeelings || `<p>No recommended resources found.</p>`;
+
+        let htmlClasses = "";
+
+        if (classLinks.length > 0) {
+            htmlClasses += `<h3>Resources</h3><ul>`;
+            classLinks.forEach(link => {
+            htmlClasses += renderLink(link);
+            });
+            htmlClasses += "</ul>";
+        }
+
+        containerClasses.innerHTML = htmlClasses || `<p>No recommended resources found.</p>`;
+    }
+
+    function classify() {
+      const income = document.getElementById('income').value;
+      const expenses = document.getElementById('expenses').value;
+      const liquid = document.getElementById('liquid').value;
+      const hard = document.getElementById('hard').value;
+
+      const incomeI = incomeRanks.indexOf(income);
+      const expenseI = incomeRanks.indexOf(expenses);
+      const liquidI = assetRanks.indexOf(liquid);
+      const hardI = assetRanks.indexOf(hard);
+
+      let feeling = "Stable";
+
+      if (incomeI <= 1 && expenseI >= 2 && liquidI <= 2) {
+        feeling = "Surviving";
+      } else if (incomeI <= 2 && expenseI >= incomeI && liquidI <= 3) {
+        feeling = "Struggling";
+      } else if (incomeI === expenseI && [2, 3].includes(liquidI)) {
+        feeling = "Treading Water";
+      } else if (incomeI >= 3 && incomeI > expenseI && liquidI >= 3) {
+        if (hardI >= 4) {
+          if (incomeI >= 5 && liquidI >= 5 && hardI >= 5) {
+            if (incomeI === 6 || liquidI === 7 || hardI === 7) {
+              feeling = "Affluent";
+            } else if (incomeI === 6 && liquidI === 7 && hardI === 7) {
+              feeling = "Wealthy Elite";
+            } else {
+              feeling = "High Net Worth";
+            }
+          } else {
+            feeling = "Comfortable";
+          }
+        } else {
+          feeling = "Stable";
+        }
+      } else if (incomeI >= 4 && expenseI >= 4 && liquidI <= 3) {
+        feeling = "Overstretched";
+      } else if (hardI >= 5 && liquidI <= 2 && incomeI <= 2) {
+        feeling = "Asset-Rich, Cash-Poor";
+      } else if (incomeI >= 5 && liquidI >= 5 && hardI >= 5 && expenseI <= 3) {
+        feeling = "Financially Free";
+      } else if (incomeI >= 3 && incomeI > expenseI) {
+        feeling = "Building Up";
+      }
+
+        document.getElementById('result').innerText = "Classification: " + feeling;
+
+        const classLevel = determineClassLevel(incomeI, liquidI, hardI);
+        document.getElementById('class-level').innerText = "Class Level: " + classLevel;
+
+        const classInfo = classDescriptions[classLevel];
+        document.getElementById('class-description').innerHTML = classInfo
+        ? `<p><strong>Class Description:</strong><br>${classInfo.desc}</p>
+            <p><strong>Steps to improve:</strong><br>${classInfo.steps}</p>`
+        : "";
+
+        const detail = descriptionMap[feeling];
+        document.getElementById('details').innerHTML = detail
+        ? `<p><strong>About this level:</strong><br>${detail.desc}</p>
+            <p><strong>Steps to improve:</strong><br>${detail.steps}</p>`
+        : "";
+
+        renderResources(feeling, classLevel);
+    }
+
+    // Trigger initial classification on page load
+    classify();
+  </script>
+
+</body>
+</html>
