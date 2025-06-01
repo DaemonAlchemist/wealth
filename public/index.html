@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Wealth Classification Tool</title>
+  <title>How Wealthy Am I?</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -61,9 +61,23 @@
 </head>
 <body>
 
-  <h2>Wealth Classification Tool</h2>
+  <h2>How Wealthy Am I?</h2>
 
   <div class="container">
+    <label>Your Self-Perception:
+      <select id="perception">
+        <option value="">— Select —</option>
+        <option value="Lower Class">Lower Class</option>
+        <option value="Lower-Middle Class">Lower-Middle Class</option>
+        <option value="Middle Class">Middle Class</option>
+        <option value="Upper-Middle Class">Upper-Middle Class</option>
+        <option value="Affluent">Affluent</option>
+        <option value="High Net Worth Individual">High Net Worth Individual</option>
+        <option value="Wealth Elite">Wealth Elite</option>
+        <option value="Upper Class">Upper Class</option>
+      </select>
+    </label>
+    
     <label>Income Level:
       <select id="income">
         <option value="Extremely Low">Extremely Low: &lt;$15,000</option>
@@ -88,7 +102,7 @@
       </select>
     </label>
 
-    <label>Liquid Assets:
+    <label>Liquid Assets (cash, checking, savings, etc.):
       <select id="liquid">
         <option value="None">None: $0</option>
         <option value="Tiny">Tiny: $1–$1,000</option>
@@ -101,7 +115,7 @@
       </select>
     </label>
 
-    <label>Hard Assets:
+    <label>Hard Assets (real estate, retirement, stocks, etc.):
       <select id="hard">
         <option value="None">None: $0</option>
         <option value="Tiny">Tiny: $1–$5,000</option>
@@ -114,157 +128,209 @@
       </select>
     </label>
 
+    <label>Debt Level:
+      <select id="debt">
+        <option value="None">None: $0</option>
+        <option value="Low">Low: $1–$10,000</option>
+        <option value="Moderate">Moderate: $10,000–$50,000</option>
+        <option value="High">High: $50,000–$150,000</option>
+        <option value="Very High">Very High: $150,000–$500,000</option>
+        <option value="Extreme">Extreme: Over $500,000</option>
+      </select>
+    </label>
+    
     <div id="class-level" style="margin-top: 10px; font-weight: bold; color: #555;"></div>
+    <div id="percentile-info" style="margin-top: 10px; font-style: italic;"></div>
+    <div id="perception-warning" style="margin-top: 10px; color: #a94442;"></div>
+    <details style="margin-top: 15px; max-width: 480px;">
+      <summary style="cursor:pointer; font-weight: bold; color: #2e86de;">
+        Why do people misjudge their financial status?
+      </summary>
+      <div style="margin-top: 10px; font-size: 0.95em; color: #444; line-height: 1.5;">
+        <ul style="padding-left: 20px;">
+          <li><strong>Social comparison:</strong> We tend to compare with friends or neighbors who are similar or wealthier.</li>
+          <li><strong>Local norms:</strong> Living in a high-cost or affluent area distorts your sense of “normal.”</li>
+          <li><strong>Lifestyle inflation:</strong> As income rises, so do expenses—masking actual financial progress.</li>
+          <li><strong>Media exposure:</strong> Constant visibility of ultra-wealthy lifestyles skews expectations.</li>
+          <li><strong>Asset invisibility:</strong> Things like retirement savings or property equity aren't felt daily.</li>
+        </ul>
+        <p>Objective tools like this one help ground your understanding in real-world data, not just perception.</p>
+      </div>
+    </details>
+    
     <div id="class-description" style="margin-top: 10px; line-height: 1.5;"></div>
     <div id="resources-classes" style="margin-top: 20px;"></div>
 
     <div id="result">Classification: —</div>
     <div id="details" style="margin-top: 20px; line-height: 1.5;"></div>
     <div id="resources-feelings" style="margin-top: 20px;"></div>
+
   </div>
 
   <script>
     const incomeRanks = ['Extremely Low', 'Very Low', 'Low', 'Moderate', 'High', 'Very High', 'Ultra High'];
     const assetRanks = ['None', 'Tiny', 'Very Low', 'Low', 'Moderate', 'High', 'Very High', 'Ultra High'];
-    const descriptionMap = {
-        "Surviving": {
-            desc: `You're in a highly precarious financial position. Income is insufficient to comfortably meet basic needs, and you have little to no financial buffer. A single unexpected expense could cause a serious crisis.`,
-            steps: `• Focus on increasing income through job changes, skill-building, or side hustles.<br>
-                    • Use assistance programs to ease pressure.<br>
-                    • Start a $500–$1,000 emergency fund.<br>
-                    • Eliminate non-essential expenses.`
-        },
-        "Struggling": {
-            desc: `You can cover basics but have limited savings and remain vulnerable. Money is tight, and unexpected costs are disruptive.`,
-            steps: `• Track spending and cut unnecessary costs.<br>
-                    • Begin small, automated savings.<br>
-                    • Improve skills to boost earning potential.<br>
-                    • Address debt early.`
-        },
-        "Treading Water": {
-            desc: `You're breaking even. Expenses match income and savings are minimal. You’re not declining, but not progressing either.`,
-            steps: `• Optimize spending to build a savings gap.<br>
-                    • Prioritize a 3-month emergency fund.<br>
-                    • Begin long-term investments.<br>
-                    • Guard against lifestyle inflation.`
-        },
-        "Stable": {
-            desc: `You’re financially safe but not yet wealthy. Income reliably exceeds expenses and you’ve built a small safety net.`,
-            steps: `• Build a 3–6 month emergency fund.<br>
-                    • Increase retirement contributions.<br>
-                    • Begin investing with clear goals.<br>
-                    • Maintain smart expense habits.`
-        },
-        "Comfortable": {
-            desc: `You’re in a good place. Income, savings, and assets are solid. You can weather setbacks and plan confidently.`,
-            steps: `• Maximize tax efficiency.<br>
-                    • Diversify investments and protect gains.<br>
-                    • Plan for mid/long-term goals (home, retirement, legacy).`
-        },
-        "Building Up": {
-            desc: `You’re gaining traction. Surplus income is flowing into savings or investments. The trajectory is positive.`,
-            steps: `• Reinvest cashflows for growth.<br>
-                    • Define specific milestones (e.g. net worth goals).<br>
-                    • Avoid lifestyle inflation.<br>
-                    • Monitor progress monthly.`
-        },
-        "Overstretched": {
-            desc: `You earn and own a lot, but also spend a lot. Cashflow may feel tight due to debt or high fixed costs.`,
-            steps: `• Reduce discretionary expenses.<br>
-                    • Rebuild liquidity.<br>
-                    • Consider downsizing or restructuring debt.<br>
-                    • Rebalance priorities toward long-term security.`
-        },
-        "Financially Free": {
-            desc: `You’re independent—your assets or passive income can support your lifestyle indefinitely.`,
-            steps: `• Maintain asset allocation and rebalance yearly.<br>
-                    • Optimize estate and tax strategies.<br>
-                    • Focus on purpose: family, giving, or leisure.<br>
-                    • Consider educating/mentoring others.`
-        },
-        "Asset-Rich, Cash-Poor": {
-            desc: `You have significant assets tied up in property or retirement, but lack day-to-day liquidity.`,
-            steps: `• Explore liquidity access (HELOC, sale, drawdown).<br>
-                    • Shift some wealth into liquid forms.<br>
-                    • Align asset structure with life needs.`
-        },
-        "High Net Worth": {
-            desc: `You’re firmly in the top tier. Wealth is broad and diversified. Your focus is now on stewardship and efficiency.`,
-            steps: `• Optimize taxes and legacy plans.<br>
-                    • Reevaluate risk exposure and long-term goals.<br>
-                    • Teach financial literacy within your family.`
-        },
-        "Affluent": {
-            desc: `You’re above comfort, likely with business ownership or high-value assets. You’re near the top percentile.`,
-            steps: `• Focus on preserving wealth.<br>
-                    • Seek tax and investment specialization.<br>
-                    • Diversify income and asset classes.`
-        },
-        "Wealthy Elite": {
-            desc: `You’re among the ultra-wealthy. Your focus is likely legacy, philanthropy, or structural wealth planning.`,
-            steps: `• Establish or expand family office structures.<br>
-                    • Engage in advanced estate or philanthropic planning.<br>
-                    • Delegate operations to maintain simplicity and control.`
-        }
+    const debtRanks = ['None', 'Low', 'Moderate', 'High', 'Very High', 'Extreme'];
+
+    const incomeValues = {
+      "Extremely Low": 10000,
+      "Very Low": 22500,
+      "Low": 45000,
+      "Moderate": 90000,
+      "High": 180000,
+      "Very High": 375000,
+      "Ultra High": 750000
+    };
+
+    const expenseValues = {
+      "Extremely Low": 10000,
+      "Very Low": 22500,
+      "Low": 45000,
+      "Moderate": 90000,
+      "High": 160000,
+      "Very High": 275000,
+      "Ultra High": 400000
+    };
+
+    const liquidValues = {
+      "None": 0,
+      "Tiny": 500,
+      "Very Low": 3000,
+      "Low": 15000,
+      "Moderate": 60000,
+      "High": 300000,
+      "Very High": 750000,
+      "Ultra High": 1500000
+    };
+
+    const hardValues = {
+      "None": 0,
+      "Tiny": 3000,
+      "Very Low": 15000,
+      "Low": 60000,
+      "Moderate": 300000,
+      "High": 1250000,
+      "Very High": 6000000,
+      "Ultra High": 15000000
+    };
+
+    const debtValues = {
+      "None": 0,
+      "Low": 5000,
+      "Moderate": 30000,
+      "High": 100000,
+      "Very High": 300000,
+      "Extreme": 600000
+    };
+
+    const profileMap = {
+      "Underwater": {
+        desc: `You're overwhelmed. Debt and expenses exceed your income, and you're likely behind on payments or relying on credit to survive.`,
+        steps: `• Seek nonprofit debt counseling.<br>• Cut recurring non-essentials fast.<br>• Focus on stabilizing one category (income or expenses) first.`
+      },
+      "Scraping By": {
+        desc: `You're surviving month-to-month with minimal income and no room for error. Savings are nonexistent.`,
+        steps: `• Apply for local/state assistance.<br>• Prioritize small but consistent savings habits.<br>• Explore quick upskilling or certifications.`
+      },
+      "Debt-Weighted": {
+        desc: `You have income, but it's mostly spoken for due to debt repayments or obligations. Progress is slow or stalled.`,
+        steps: `• Refinance high-interest debt.<br>• Automate minimums, and target one balance at a time.<br>• Avoid new credit activity.`
+      },
+      "House Rich, Cash Poor": {
+        desc: `Most of your wealth is tied up in real estate or hard assets. Liquidity is very low, making you financially inflexible.`,
+        steps: `• Look into HELOCs or asset refinancing.<br>• Shift some savings into liquid instruments.<br>• Don’t overextend on upgrades or new purchases.`
+      },
+      "Fragile Middle": {
+        desc: `You're earning and spending about the same. Small gains can be undone by one bad month.`,
+        steps: `• Identify 5–10% of expenses to cut.<br>• Focus on building a small emergency buffer.<br>• Look for ways to increase income margin.`
+      },
+      "Building Margin": {
+        desc: `You're beginning to widen the gap between what you earn and what you spend. You’re gaining traction.`,
+        steps: `• Automate savings and retirement contributions.<br>• Begin investing even small amounts monthly.<br>• Avoid unnecessary fixed expenses.`
+      },
+      "Cashflow Positive, Asset Light": {
+        desc: `You're good at saving but haven't built long-term assets yet. Wealth is still in motion, not stored.`,
+        steps: `• Begin investing in retirement or low-cost brokerage accounts.<br>• Set long-term targets and timelines.<br>• Build asset diversity beyond savings.`
+      },
+      "Comfortably Liquid": {
+        desc: `You have savings, good income, and financial control. You're resilient and poised for long-term growth.`,
+        steps: `• Consider laddered CDs or diversified ETFs.<br>• Build medium-term goal funds (e.g., travel, car, education).<br>• Increase retirement contribution rates.`
+      },
+      "Growth-Oriented Investor": {
+        desc: `You're using your income and assets to build real long-term wealth. You're playing the long game.`,
+        steps: `• Review your asset allocation annually.<br>• Diversify income streams where possible.<br>• Guard against lifestyle creep.`
+      },
+      "Outwardly Wealthy, Internally Stressed": {
+        desc: `Your income and lifestyle are high, but so are your fixed costs or debts. You’re stretched thin beneath the surface.`,
+        steps: `• Audit and downsize recurring expenses.<br>• Consider asset liquidation to regain liquidity.<br>• Shift focus to financial flexibility.`
+      },
+      "Financially Independent": {
+        desc: `Your income from investments or passive sources covers your lifestyle. You have full control of your time.`,
+        steps: `• Protect assets with smart legal structures.<br>• Continue strategic giving or mentoring.<br>• Rebalance portfolios yearly.`
+      },
+      "Multi-Generational Wealth": {
+        desc: `You've built or inherited enough wealth to think in terms of legacy and structure. You're stewarding resources, not just spending.`,
+        steps: `• Use trusts, donor-advised funds, or private entities.<br>• Focus on education and values within the family.<br>• Regularly review wealth continuity plans.`
+      }
     };
 
     const classDescriptions = {
-        "Lower Class": {
-            desc: `Struggles with very low income and often zero savings or assets. May rely on public assistance, informal work, or community support.`,
-            steps: `• <strong>Income:</strong> Pursue job training, certifications, or local job assistance programs.<br>
-                    • <strong>Expenses:</strong> Seek housing, food, and utility subsidies to stabilize.<br>
-                    • <strong>Liquid Assets:</strong> Open a no-fee savings account and begin saving even $5/week.<br>
-                    • <strong>Hard Assets:</strong> Avoid predatory financing. Focus first on cash stability.`
-        },
-        "Lower-Middle Class": {
-            desc: `Modest income allows survival and some minor savings. Assets are still minimal. Financial pressure is ongoing.`,
-            steps: `• <strong>Income:</strong> Look for higher-paying roles or expand hours.<br>
-                    • <strong>Expenses:</strong> Audit for subscriptions or lifestyle expenses that can be reduced.<br>
-                    • <strong>Liquid Assets:</strong> Build a starter emergency fund ($500–$1,500).<br>
-                    • <strong>Hard Assets:</strong> Explore employer retirement plans (even 1% to start).`
-        },
-        "Middle Class": {
-            desc: `Can afford moderate discretionary spending and is growing assets. Liquidity may still be tight.`,
-            steps: `• <strong>Income:</strong> Negotiate raises or add a side hustle.<br>
-                    • <strong>Expenses:</strong> Use a budget to grow your monthly surplus.<br>
-                    • <strong>Liquid Assets:</strong> Target 3 months of expenses in savings.<br>
-                    • <strong>Hard Assets:</strong> Prioritize long-term vehicles like IRAs or home equity.`
-        },
-        "Upper-Middle Class": {
-            desc: `Strong earning power and growing financial stability. Liquidity and asset diversification are key.`,
-            steps: `• <strong>Income:</strong> Maximize 401(k) matches and bonuses.<br>
-                    • <strong>Expenses:</strong> Channel surpluses into investment, not lifestyle inflation.<br>
-                    • <strong>Liquid Assets:</strong> Maintain a 6-month emergency buffer.<br>
-                    • <strong>Hard Assets:</strong> Consider real estate or private investment vehicles.`
-        },
-        "Affluent": {
-            desc: `High earnings with strong financial habits. Investing and tax optimization become primary levers.`,
-            steps: `• <strong>Income:</strong> Convert active income into passive income streams.<br>
-                    • <strong>Expenses:</strong> Monitor for inefficiencies or redundant luxuries.<br>
-                    • <strong>Liquid Assets:</strong> Consider high-yield savings and laddered CDs.<br>
-                    • <strong>Hard Assets:</strong> Diversify beyond primary residence (e.g., REITs, rental property).`
-        },
-        "High Net Worth Individual": {
-            desc: `Assets exceed $1M+. Planning shifts from accumulation to optimization and protection.`,
-            steps: `• <strong>Income:</strong> Evaluate income stream sustainability (e.g., business exit, dividends).<br>
-                    • <strong>Expenses:</strong> Consider tax implications of major expenses or gifts.<br>
-                    • <strong>Liquid Assets:</strong> Balance returns with liquidity for agility.<br>
-                    • <strong>Hard Assets:</strong> Rebalance between business equity, property, and portfolios.`
-        },
-        "Wealth Elite": {
-            desc: `Extreme financial abundance. Primary focus is legacy, stewardship, and intergenerational planning.`,
-            steps: `• <strong>Income:</strong> Institutionalize passive or recurring income (e.g., funds, royalties).<br>
-                    • <strong>Expenses:</strong> Audit for trust/estate strategy compatibility.<br>
-                    • <strong>Liquid Assets:</strong> Maintain reserves for opportunity and risk.<br>
-                    • <strong>Hard Assets:</strong> Use family offices, foundations, or private banking structures.`
-        },
-        "Upper Class": {
-            desc: `Solidified wealth and strong cashflow. Enjoys comfort and influence, often across generations.`,
-            steps: `• <strong>Income:</strong> Leverage for investment or philanthropy.<br>
-                    • <strong>Expenses:</strong> Align spending with legacy and long-term strategy.<br>
-                    • <strong>Liquid Assets:</strong> Review allocation toward tax-advantaged vehicles.<br>
-                    • <strong>Hard Assets:</strong> Optimize ownership (e.g., LLCs, trusts).`
-        }
+      "Lower Class": {
+        desc: `You are in a financially vulnerable position. Your income likely doesn't cover all essentials, and you may depend on assistance, community support, or irregular work. Basic needs like stable housing or healthcare may feel out of reach.`,
+        steps: `• <strong>Increase Income:</strong> Explore job training, certifications, or community employment programs.<br>
+                • <strong>Reduce Expenses:</strong> Apply for local housing, food, and utility subsidies to free up cash.<br>
+                • <strong>Start Saving:</strong> Open a basic savings account and commit to setting aside even small amounts weekly.<br>
+                • <strong>Avoid Risky Debt:</strong> Avoid payday lenders and focus on building cash stability first.`
+      },
+      "Lower-Middle Class": {
+        desc: `You’re making ends meet with modest income, but money remains tight. You may have some savings or employer benefits, but unexpected costs can still derail your progress.`,
+        steps: `• <strong>Boost Income:</strong> Look for higher-paying roles, side gigs, or additional hours.<br>
+                • <strong>Control Spending:</strong> Audit subscriptions and lifestyle habits for quick wins.<br>
+                • <strong>Build a Safety Net:</strong> Target a $500–$1,500 emergency fund.<br>
+                • <strong>Start Investing:</strong> If available, contribute even 1% to an employer-sponsored retirement plan.`
+      },
+      "Middle Class": {
+        desc: `You have a steady income, can afford some discretionary spending, and may be building early-stage assets. Still, liquidity may be low, and long-term financial security isn’t guaranteed.`,
+        steps: `• <strong>Maximize Earnings:</strong> Ask for raises or consider income diversification like freelancing.<br>
+                • <strong>Budget Surplus:</strong> Track and optimize spending to build monthly surplus.<br>
+                • <strong>Emergency Fund:</strong> Aim for 3 months of living expenses saved.<br>
+                • <strong>Invest for Growth:</strong> Begin building long-term wealth through retirement and brokerage accounts.`
+      },
+      "Upper-Middle Class": {
+        desc: `You're on solid financial footing with strong income and a growing portfolio. You likely have insurance, savings, and investment vehicles in place. The challenge is maintaining momentum and avoiding lifestyle creep.`,
+        steps: `• <strong>Maximize Benefits:</strong> Contribute fully to employer matches and bonus savings opportunities.<br>
+                • <strong>Invest Intentionally:</strong> Diversify into assets beyond salary (e.g. stocks, real estate).<br>
+                • <strong>Guard Against Inflation:</strong> Avoid letting income gains lead to excessive lifestyle upgrades.<br>
+                • <strong>Plan Strategically:</strong> Define clear mid- and long-term goals.`
+      },
+      "Affluent": {
+        desc: `You're in the top earning brackets with strong assets, diversified income, and long-term potential. You're likely investing for more than just retirement—perhaps for business ventures, education, or legacy.`,
+        steps: `• <strong>Convert Income:</strong> Shift from active to passive or leveraged income streams.<br>
+                • <strong>Optimize Taxes:</strong> Utilize tax-efficient accounts and deductions.<br>
+                • <strong>Monitor Spending:</strong> Ensure your spending aligns with long-term goals, not short-term comfort.<br>
+                • <strong>Balance Risk:</strong> Diversify across real estate, equities, and possibly private markets.`
+      },
+      "High Net Worth Individual": {
+        desc: `You’ve crossed into a realm of substantial wealth—likely over $1M in assets. Your focus may be shifting from building wealth to managing, protecting, and planning its transfer.`,
+        steps: `• <strong>Refine Strategy:</strong> Work with advisors to optimize taxes, estate plans, and risk exposure.<br>
+                • <strong>Preserve Capital:</strong> Focus on sustainable yields and long-term wealth resilience.<br>
+                • <strong>Legacy Planning:</strong> Consider how your wealth aligns with your values and long-term goals.<br>
+                • <strong>Educate Family:</strong> Begin sharing financial principles with the next generation.`
+      },
+      "Wealth Elite": {
+        desc: `You’re among the ultra-wealthy, with financial freedom spanning generations. Your concerns likely revolve around legacy, control, philanthropy, and stewardship rather than accumulation.`,
+        steps: `• <strong>Structure Wealth:</strong> Use trusts, family offices, or foundations to manage complexity.<br>
+                • <strong>Engage in Planning:</strong> Collaborate with estate and tax experts for multi-generational alignment.<br>
+                • <strong>Give Back:</strong> Consider formal philanthropy as part of your identity and impact.<br>
+                • <strong>Simplify:</strong> Delegate or automate where possible to reduce decision fatigue and focus on purpose.`
+      },
+      "Upper Class": {
+        desc: `You have high income and a strong, diversified asset base. Your lifestyle is likely comfortable, and you may have influence within your community or industry.`,
+        steps: `• <strong>Leverage Position:</strong> Use your financial strength to shape long-term investment or philanthropic goals.<br>
+                • <strong>Protect Wealth:</strong> Maintain appropriate legal and tax shields.<br>
+                • <strong>Optimize Giving:</strong> Consider donor-advised funds, charitable trusts, or other high-leverage giving tools.<br>
+                • <strong>Build Continuity:</strong> Document family values and financial education strategies.`
+      }
     };
 
     const resources = {
@@ -487,17 +553,103 @@
 
         containerClasses.innerHTML = htmlClasses || `<p>No recommended resources found.</p>`;
     }
+    function getWealthPercentile(incomeI, liquidI, hardI) {
+      const score = incomeI * 2 + liquidI + hardI;
+
+      if (score <= 4) return "Bottom 20% (Global)";
+      if (score <= 6) return "Bottom 40% (Global)";
+      if (score <= 8) return "Middle 40–60% (U.S. average)";
+      if (score <= 10) return "Top 30% (U.S.)";
+      if (score <= 12) return "Top 20% (U.S.)";
+      if (score <= 14) return "Top 10% (U.S.)";
+      return "Top 5% or higher (U.S./Global)";
+    }
+
+    function getProfile(incomeVal, expenseVal, liquidVal, hardVal, debtVal) {
+      const netWorth = liquidVal + hardVal - debtVal;
+      const yearsOfExpenses = expenseVal > 0 ? netWorth / expenseVal : 0;
+
+      // 1. Financially Independent: 25+ years of expenses covered and low/no debt
+      if (yearsOfExpenses >= 25 && debtVal <= 30000) {
+        return "Financially Independent";
+      }
+
+      // 2. Multi-Generational Wealth: Extremely high assets
+      if (hardVal >= 10000000 && liquidVal >= 500000 && netWorth >= 5000000) {
+        return "Multi-Generational Wealth";
+      }
+
+      // 3. Outwardly Wealthy, Internally Stressed
+      if (incomeVal >= 180000 && expenseVal >= 160000 && liquidVal < 60000 && debtVal >= 100000) {
+        return "Outwardly Wealthy, Internally Stressed";
+      }
+
+      // 4. House Rich, Cash Poor
+      if (hardVal >= 1000000 && liquidVal <= 25000 && netWorth >= 500000) {
+        return "House Rich, Cash Poor";
+      }
+
+      // 5. Debt-Weighted
+      if (debtVal >= 100000 && expenseVal >= 60000 && netWorth <= 250000) {
+        return "Debt-Weighted";
+      }
+
+      // 6. Scraping By
+      if (incomeVal <= 30000 && liquidVal <= 3000 && debtVal <= 5000 && expenseVal >= incomeVal) {
+        return "Scraping By";
+      }
+
+      // 7. Underwater
+      if (incomeVal <= 20000 && expenseVal > 40000 && debtVal > 50000) {
+        return "Underwater";
+      }
+
+      // 8. Growth-Oriented Investor
+      if (netWorth >= 1000000 && incomeVal >= 180000 && debtVal < 100000) {
+        return "Growth-Oriented Investor";
+      }
+
+      // 9. Comfortably Liquid
+      if (liquidVal >= 100000 && netWorth >= 400000 && incomeVal >= 100000 && debtVal <= 50000) {
+        return "Comfortably Liquid";
+      }
+
+      // 10. Cashflow Positive, Asset Light
+      if (incomeVal >= 100000 && liquidVal >= 60000 && netWorth <= 250000 && debtVal <= 50000) {
+        return "Cashflow Positive, Asset Light";
+      }
+
+      // 11. Building Margin
+      if (incomeVal > expenseVal && liquidVal >= 15000 && netWorth <= 200000) {
+        return "Building Margin";
+      }
+
+      // 12. Fragile Middle
+      return "Fragile Middle";
+    }
 
     function classify() {
       const income = document.getElementById('income').value;
       const expenses = document.getElementById('expenses').value;
       const liquid = document.getElementById('liquid').value;
       const hard = document.getElementById('hard').value;
+      const debt = document.getElementById('debt').value;
 
       const incomeI = incomeRanks.indexOf(income);
       const expenseI = incomeRanks.indexOf(expenses);
       const liquidI = assetRanks.indexOf(liquid);
       const hardI = assetRanks.indexOf(hard);
+      const debtI = debtRanks.indexOf(debt);
+
+      const incomeVal = incomeValues[income];
+      const expenseVal = expenseValues[expenses];
+      const liquidVal = liquidValues[liquid];
+      const hardVal = hardValues[hard];
+      const debtVal = debtValues[debt];
+
+      const netWorth = liquidVal + hardVal - debtVal;
+      const yearsOfExpenses = expenseVal > 0 ? netWorth / expenseVal : 0;
+
 
       let feeling = "Stable";
 
@@ -538,17 +690,30 @@
         const classLevel = determineClassLevel(incomeI, liquidI, hardI);
         document.getElementById('class-level').innerText = "Class Level: " + classLevel;
 
+        const perceivedValue = document.getElementById('perception').value;
+        if (perceivedValue && perceivedValue !== classLevel) {
+          document.getElementById('perception-warning').innerHTML =
+            `<p><strong>Note:</strong> You perceive yourself as <em>${perceivedValue}</em>, but based on your inputs, you likely fall under <em>${classLevel}</em>. This is a common bias due to local or peer-group comparisons.</p>`;
+        } else {
+          document.getElementById('perception-warning').innerHTML = "";
+        }
+
+        document.getElementById('percentile-info').innerText =
+          "Estimated percentile position: " + getWealthPercentile(incomeI, liquidI, hardI);
+
         const classInfo = classDescriptions[classLevel];
         document.getElementById('class-description').innerHTML = classInfo
         ? `<p><strong>Class Description:</strong><br>${classInfo.desc}</p>
             <p><strong>Steps to improve:</strong><br>${classInfo.steps}</p>`
         : "";
 
-        const detail = descriptionMap[feeling];
-        document.getElementById('details').innerHTML = detail
-        ? `<p><strong>About this level:</strong><br>${detail.desc}</p>
-            <p><strong>Steps to improve:</strong><br>${detail.steps}</p>`
-        : "";
+        const profile = getProfile(incomeVal, expenseVal, liquidVal, hardVal, debtVal);
+        const profileInfo = profileMap[profile];
+        document.getElementById('details').innerHTML = profileInfo
+          ? `<p><strong>Profile:</strong> ${profile}</p>
+            <p><strong>What this means:</strong> ${profileInfo.desc}</p>
+            <p><strong>Steps forward:</strong> ${profileInfo.steps}</p>`
+          : "";
 
         renderResources(feeling, classLevel);
     }
