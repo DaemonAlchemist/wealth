@@ -506,18 +506,20 @@
 
     const elements = ["income", "expenses", "liquid", "hard"];
     elements.forEach(id => document.getElementById(id).addEventListener("change", classify));
-    function determineClassLevel(incomeI, liquidI, hardI) {
-        const wealthIndex = (liquidI + hardI) / 2;
+    function getClassLevel(incomeVal, expenseVal, liquidVal, hardVal, debtVal) {
+      const netWorth = liquidVal + hardVal - debtVal;
+      const cashflowSurplus = incomeVal - expenseVal;
+      const yearsOfExpenses = expenseVal > 0 ? netWorth / expenseVal : 0;
 
-        if (incomeI <= 1 && wealthIndex <= 1) return "Lower Class";
-        if (incomeI <= 2 && wealthIndex <= 2) return "Lower-Middle Class";
-        if (incomeI <= 3 && wealthIndex <= 3) return "Middle Class";
-        if (incomeI <= 4 && wealthIndex <= 4) return "Upper-Middle Class";
-        if (incomeI <= 5 && wealthIndex <= 5) return "Affluent";
-        if (incomeI === 6 && wealthIndex >= 6) return "High Net Worth Individual";
-        if (incomeI === 6 && wealthIndex === 7) return "Wealth Elite";
-
-        return "Upper Class";
+      if (netWorth >= 10000000) return "Wealth Elite";
+      if (netWorth >= 3000000 && incomeVal >= 250000) return "Upper Class";
+      if (netWorth >= 1000000) return "High Net Worth Individual";
+      if (incomeVal >= 180000 && netWorth >= 500000) return "Affluent";
+      if (incomeVal >= 120000 && cashflowSurplus > 20000 && netWorth >= 250000) return "Upper-Middle Class";
+      if (incomeVal >= 60000 && cashflowSurplus > 5000 && netWorth >= 100000) return "Middle Class";
+      if (incomeVal >= 30000 && netWorth >= 25000) return "Lower-Middle Class";
+      if (incomeVal >= expenseVal && netWorth < 25000) return "Working Class";
+      return "Lower Class";
     }
 
     function renderResources(feeling, classLevel) {
@@ -687,7 +689,7 @@
 
         document.getElementById('result').innerText = "Classification: " + feeling;
 
-        const classLevel = determineClassLevel(incomeI, liquidI, hardI);
+        const classLevel = getClassLevel(incomeVal, expenseVal, liquidVal, hardVal, debtVal);
         document.getElementById('class-level').innerText = "Class Level: " + classLevel;
 
         const perceivedValue = document.getElementById('perception').value;
